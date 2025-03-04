@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Szyfrator.Gui.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Szyfrator.Gui.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Szyfrator.Gui">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid>
+        <Grid ShowGridLines="True" ColumnDefinitions="*,*" RowDefinitions="*, 3*">
+            <Label
+                Grid.ColumnSpan="2"
+                VerticalContentAlignment="Center"
+                HorizontalContentAlignment="Center"
+                FontSize="72">
+                Szyfrator
+            </Label>
+
+            <StackPanel Grid.Row="1" Grid.Column="0">
+                <StackPanel Orientation="Horizontal">
+                    <Label VerticalAlignment="Center">Twoje archiwa</Label>
+                    <Button x:Name="SelectDirectory" Click="SelectDirectory_OnClick" VerticalAlignment="Top" HorizontalContentAlignment="Right">Wybierz folder z twoimi archiwami</Button>
+                </StackPanel>
+                
+                <DockPanel IsVisible="True" Margin="0, 10, 0, 0">
+                    <ListBox SelectionChanged="Archives_OnSelectionChanged" x:Name="Archives" />
+                </DockPanel>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1" Grid.Row="1">
+                <TreeView x:Name="ArchiveTreeView"></TreeView>
+            </StackPanel>
+
+        </Grid>
+    </Grid>
+</Window>
