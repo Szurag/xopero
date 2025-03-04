@@ -6,4 +6,5 @@ public class ZipItem
     public bool IsDirectory { get; set; }
     public bool IsPassword { get; set; } = false;
     public List<ZipItem> Children { get; set; } = [];
+    public string? FullPath { get; set; } = null;
 }

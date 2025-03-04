@@ -35,14 +35,14 @@ public class CreateArchiveService
         zipStream.CloseEntry();
     }
 
-    private static string? AskForPassword()
+    public static string? AskForPassword()
     {
         Console.WriteLine("Podaj hasło do archiwum");
         Console.WriteLine("Jeżeli brak hasła, naciśnij Enter");
         return Console.ReadLine();
     }
 
-    private static void AddFileToArchive(ZipOutputStream zipStream, string filePath, string parentDirectory)
+    public static void AddFileToArchive(ZipOutputStream zipStream, string filePath, string parentDirectory)
     {
         var entryName = Path.Combine(parentDirectory, Path.GetFileName(filePath));
         var entry = new ZipEntry(entryName)
@@ -56,7 +56,7 @@ public class CreateArchiveService
         fsInput.CopyTo(zipStream);
     }
 
-    private static void AddDirectoryToArchive(ZipOutputStream zipStream, string directoryPath, string parentDirectory)
+    public static void AddDirectoryToArchive(ZipOutputStream zipStream, string directoryPath, string parentDirectory)
     {
         var directoryName = Path.Combine(parentDirectory, Path.GetFileName(directoryPath));
         var entry = new ZipEntry(directoryName + "/")
@@ -78,7 +78,7 @@ public class CreateArchiveService
         }
     }
 
-    private static string? AskForCompressionLevel()
+    public static string? AskForCompressionLevel()
     {
         Console.WriteLine("Wybierz poziom kompresji:");
         Console.WriteLine("1 - 9");
