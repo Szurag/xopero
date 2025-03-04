@@ -6,7 +6,7 @@ namespace Szyfrator.Services;
 
 public class ArchiveExplorerService
 {
-    private List<ZipItem> _zipItems = [];
+    private readonly List<ZipItem> _zipItems = [];
     private string? _password = null;
 
     public void ArchiveExplorer()
@@ -109,11 +109,15 @@ public class ArchiveExplorerService
             {
                 zipInputStream.Password = _password;
             }
-            
+
             ZipEntry entry;
             while ((entry = zipInputStream.GetNextEntry()) != null)
             {
-                if (entry.Name.Equals(selectedZipItem.FullPath)) continue;
+                if (selectedZipItem.FullPath != null && entry.Name.StartsWith(selectedZipItem.FullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 zipOutputStream.PutNextEntry(new ZipEntry(entry.Name));
                 zipInputStream.CopyTo(zipOutputStream);
                 zipOutputStream.CloseEntry();
