@@ -12,33 +12,58 @@ public class ArchiveExplorerService
     public void ArchiveExplorer()
     {
         var archivePath = GetPathService.GetPath();
-        MapArchive(archivePath);
+
+        if (string.IsNullOrEmpty(archivePath) || !File.Exists(archivePath))
+        {
+            AnsiConsole.MarkupLine("[red]Nieprawidłowa ścieżka do archiwum[/]");
+            return;
+        }
+
+        try
+        {
+            AnsiConsole.Status().Start("Otwieranie archiwum...", ctx => MapArchive(archivePath));
+            AnsiConsole.MarkupLine("[green]Archiwum zostało otwarte pomyślnie[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Błąd podczas otwierania archiwum: {ex.Message}[/]");
+            return;
+        }
 
         var exit = false;
 
         do
         {
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new FigletText("Archiver").Centered().Color(Color.Green));
+            AnsiConsole.MarkupLine($"[grey]Otwarte archiwum: [/][green]{Path.GetFileName(archivePath)}[/]");
+
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Wybierz akcje:")
+                    .Title("Wybierz akcję:")
                     .PageSize(10)
-                    .AddChoices("1 - przeglądaj archiwum", "2 - dodaj plik do archiwum", "3 - Usuń plik z archiwum", "4 - Wyszukaj po nazwie", "5 - Wyjdź"));
+                    .AddChoices(
+                        "1 - Przeglądaj archiwum",
+                        "2 - Dodaj plik do archiwum",
+                        "3 - Usuń plik z archiwum",
+                        "4 - Wyszukaj po nazwie",
+                        "5 - Wyjdź"));
 
             switch (option)
             {
-                case "1":
+                case "1 - Przeglądaj archiwum":
                     Display();
                     break;
-                case "2":
+                case "2 - Dodaj plik do archiwum":
                     AddFileToArchive(archivePath);
                     break;
-                case "3":
+                case "3 - Usuń plik z archiwum":
                     RemoveFileFromArchive(archivePath);
                     break;
-                case "4":
+                case "4 - Wyszukaj po nazwie":
                     SearchByName();
                     break;
-                case "5":
+                case "5 - Wyjdź":
                     exit = true;
                     break;
             }
@@ -47,12 +72,17 @@ public class ArchiveExplorerService
 
     private void SearchByName()
     {
-        Console.WriteLine("Podaj nazwę pliku / folderu, który chcesz wyszukać");
-        var name = Console.ReadLine();
+        if (_zipItems.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Archiwum jest puste.[/]");
+            return;
+        }
+
+        var name = AnsiConsole.Ask<string>("[green]Podaj nazwę pliku/folderu, który chcesz wyszukać:[/]");
 
         if (string.IsNullOrEmpty(name))
         {
-            Console.WriteLine("Nazwa nie może być pusta");
+            AnsiConsole.MarkupLine("[red]Nazwa nie może być pusta[/]");
             return;
         }
 
@@ -60,15 +90,30 @@ public class ArchiveExplorerService
 
         if (results.Count == 0)
         {
-            Console.WriteLine("Nie znaleziono pliku / folderu o podanej nazwie");
+            AnsiConsole.MarkupLine("[yellow]Nie znaleziono pliku/folderu o podanej nazwie[/]");
             return;
         }
 
-        Console.WriteLine("Znalezione pliki / foldery:");
+        AnsiConsole.MarkupLine($"[green]Znaleziono {results.Count} plików/folderów:[/]");
+
+        var table = new Table();
+        table.AddColumn("Typ");
+        table.AddColumn("Nazwa");
+        table.AddColumn("Ścieżka");
+
         foreach (var result in results)
         {
-            Console.WriteLine(result.FullPath);
+            table.AddRow(
+                result.IsDirectory ? "[blue]Folder[/]" : "[yellow]Plik[/]",
+                result.Name ?? "",
+                result.FullPath ?? ""
+            );
         }
+
+        AnsiConsole.Write(table);
+
+        Console.WriteLine("\nNaciśnij dowolny klawisz, aby kontynuować...");
+        Console.ReadKey();
     }
 
     private static List<ZipItem> SearchByNameLinq(List<ZipItem> items, string name)
@@ -82,112 +127,177 @@ public class ArchiveExplorerService
 
     private void RemoveFileFromArchive(string archivePath)
     {
-        Console.WriteLine("Podaj index pliku / folderu, który chcesz usunąć");
-        var index = Console.ReadLine();
+        if (_zipItems.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Archiwum jest puste.[/]");
+            return;
+        }
+
+        Display();
+
+        string index = AnsiConsole.Ask<string>("[green]Podaj index pliku/folderu, który chcesz usunąć:[/]");
 
         var selectedZipItem = GetZipItemByIndex(_zipItems, index);
 
         if (selectedZipItem == null)
         {
-            Console.WriteLine("Niepoprawny index");
+            AnsiConsole.MarkupLine("[red]Niepoprawny index[/]");
             return;
         }
 
-        var tempArchivePath = Path.GetTempFileName();
-
-        using (var fs = new FileStream(archivePath, FileMode.Open, FileAccess.Read))
-        using (var zipInputStream = new ZipInputStream(fs))
-        using (var tempFs = new FileStream(tempArchivePath, FileMode.Create, FileAccess.Write))
-        using (var zipOutputStream = new ZipOutputStream(tempFs))
+        if (!AnsiConsole.Confirm(
+                $"Czy na pewno chcesz usunąć {(selectedZipItem.IsDirectory ? "folder" : "plik")} '{selectedZipItem.Name}'?"))
         {
-            if (!string.IsNullOrEmpty(_password))
-            {
-                zipInputStream.Password = _password;
-            }
-
-            ZipEntry entry;
-            while ((entry = zipInputStream.GetNextEntry()) != null)
-            {
-                if (selectedZipItem.FullPath != null && entry.Name.StartsWith(selectedZipItem.FullPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                zipOutputStream.PutNextEntry(new ZipEntry(entry.Name));
-                zipInputStream.CopyTo(zipOutputStream);
-                zipOutputStream.CloseEntry();
-            }
+            return;
         }
 
-        File.Delete(archivePath);
-        File.Move(tempArchivePath, archivePath);
+        AnsiConsole.Status()
+            .Start("Usuwanie z archiwum...", ctx =>
+            {
+                var tempArchivePath = Path.GetTempFileName();
+
+                using (var fs = new FileStream(archivePath, FileMode.Open, FileAccess.Read))
+                using (var zipInputStream = new ZipInputStream(fs))
+                using (var tempFs = new FileStream(tempArchivePath, FileMode.Create, FileAccess.Write))
+                using (var zipOutputStream = new ZipOutputStream(tempFs))
+                {
+                    if (!string.IsNullOrEmpty(_password))
+                    {
+                        zipInputStream.Password = _password;
+                        zipOutputStream.Password = _password;
+                    }
+
+                    ZipEntry entry;
+                    while ((entry = zipInputStream.GetNextEntry()) != null)
+                    {
+                        if (selectedZipItem.FullPath != null &&
+                            (entry.Name.Equals(selectedZipItem.FullPath, StringComparison.OrdinalIgnoreCase) ||
+                             (selectedZipItem.IsDirectory && entry.Name.StartsWith(selectedZipItem.FullPath + "/",
+                                 StringComparison.OrdinalIgnoreCase))))
+                        {
+                            continue;
+                        }
+
+                        zipOutputStream.PutNextEntry(new ZipEntry(entry.Name));
+                        zipInputStream.CopyTo(zipOutputStream);
+                        zipOutputStream.CloseEntry();
+                    }
+                }
+
+                File.Delete(archivePath);
+                File.Move(tempArchivePath, archivePath);
+                
+                _zipItems.Clear();
+                MapArchive(archivePath);
+            });
+
+        AnsiConsole.MarkupLine("[green]Plik/folder został usunięty pomyślnie[/]");
     }
 
     private void AddFileToArchive(string archivePath)
     {
-        Console.WriteLine("Podaj index folderu, na którego poziomie chcesz dodać plik / folder");
-        var index = Console.ReadLine();
-
-        var selectedZipItem = GetZipItemByIndex(_zipItems, index);
-
-        if (selectedZipItem == null)
+        if (_zipItems.Count == 0)
         {
-            Console.WriteLine("Niepoprawny index");
+            AnsiConsole.MarkupLine("[yellow]Najpierw musisz utworzyć lub otworzyć archiwum.[/]");
             return;
         }
+        
+        Display();
 
-        if (!selectedZipItem.IsDirectory)
+        string index =
+            AnsiConsole.Ask<string>(
+                "[green]Podaj index folderu, do którego chcesz dodać plik/folder[/] ([grey]pusty dla katalogu głównego[/]):");
+
+        ZipItem? selectedZipItem = null;
+        if (!string.IsNullOrEmpty(index))
         {
-            Console.WriteLine("Nie można dodać pliku do pliku");
-            return;
+            selectedZipItem = GetZipItemByIndex(_zipItems, index);
+            if (selectedZipItem == null)
+            {
+                AnsiConsole.MarkupLine("[red]Niepoprawny index[/]");
+                return;
+            }
+
+            if (!selectedZipItem.IsDirectory)
+            {
+                AnsiConsole.MarkupLine("[red]Nie można dodać pliku do pliku[/]");
+                return;
+            }
         }
 
         var path = GetPathService.GetPath();
-        var compressionLevel = 1;
-        var password = "2";
-
-        var tempArchivePath = Path.GetTempFileName();
-
-        using (var fs = new FileStream(archivePath, FileMode.Open, FileAccess.Read))
-        using (var zipInputStream = new ZipInputStream(fs))
-        using (var tempFs = new FileStream(tempArchivePath, FileMode.Create, FileAccess.Write))
-        using (var zipOutputStream = new ZipOutputStream(tempFs))
+        if (string.IsNullOrEmpty(path) || (!Directory.Exists(path) && !File.Exists(path)))
         {
-            if (!string.IsNullOrEmpty(_password))
-            {
-                zipInputStream.Password = _password;
-            }
-            
-            zipOutputStream.SetLevel(Convert.ToInt32(compressionLevel));
-
-            if (!string.IsNullOrEmpty(password))
-            {
-                zipOutputStream.Password = password;
-            }
-
-            ZipEntry entry;
-            while ((entry = zipInputStream.GetNextEntry()) != null)
-            {
-                zipOutputStream.PutNextEntry(new ZipEntry(entry.Name));
-                zipInputStream.CopyTo(zipOutputStream);
-                zipOutputStream.CloseEntry();
-            }
-
-            if (Directory.Exists(path))
-            {
-                Console.WriteLine(selectedZipItem.FullPath);
-                CreateArchiveService.AddDirectoryToArchive(zipOutputStream, path, selectedZipItem.FullPath ?? "");
-            }
-            else if (File.Exists(path))
-            {
-                Console.WriteLine(selectedZipItem.FullPath);
-
-                CreateArchiveService.AddFileToArchive(zipOutputStream, path, selectedZipItem.FullPath ?? "");
-            }
+            AnsiConsole.MarkupLine("[red]Niepoprawna ścieżka pliku lub folderu[/]");
+            return;
         }
 
-        File.Delete(archivePath);
-        File.Move(tempArchivePath, archivePath);
+        int compressionLevel = AnsiConsole.Prompt(
+            new SelectionPrompt<int>()
+                .Title("Wybierz poziom kompresji:")
+                .AddChoices(new[] { 0, 1, 3, 5, 7, 9 })
+                .UseConverter(level => level switch
+                {
+                    0 => "0 - Bez kompresji",
+                    1 => "1 - Najszybsza (słaba kompresja)",
+                    9 => "9 - Najlepsza (wolna)",
+                    _ => $"{level} - Średnia"
+                }));
+
+        string? password = AnsiConsole.Prompt(
+            new TextPrompt<string>("Wprowadź hasło dla dodawanego pliku (pozostaw puste, aby nie używać hasła):")
+                .AllowEmpty());
+
+        AnsiConsole.Status()
+            .Start("Dodawanie pliku/folderu do archiwum...", ctx =>
+            {
+                var tempArchivePath = Path.GetTempFileName();
+
+                using (var fs = new FileStream(archivePath, FileMode.Open, FileAccess.Read))
+                using (var zipInputStream = new ZipInputStream(fs))
+                using (var tempFs = new FileStream(tempArchivePath, FileMode.Create, FileAccess.Write))
+                using (var zipOutputStream = new ZipOutputStream(tempFs))
+                {
+                    if (!string.IsNullOrEmpty(_password))
+                    {
+                        zipInputStream.Password = _password;
+                    }
+
+                    zipOutputStream.SetLevel(compressionLevel);
+
+                    if (!string.IsNullOrEmpty(password))
+                    {
+                        zipOutputStream.Password = password;
+                    }
+
+                    ZipEntry entry;
+                    while ((entry = zipInputStream.GetNextEntry()) != null)
+                    {
+                        zipOutputStream.PutNextEntry(new ZipEntry(entry.Name));
+                        zipInputStream.CopyTo(zipOutputStream);
+                        zipOutputStream.CloseEntry();
+                    }
+
+                    string targetPath = selectedZipItem?.FullPath ?? "";
+
+                    if (Directory.Exists(path))
+                    {
+                        CreateArchiveService.AddDirectoryToArchive(zipOutputStream, path, targetPath);
+                    }
+                    else if (File.Exists(path))
+                    {
+                        CreateArchiveService.AddFileToArchive(zipOutputStream, path, targetPath);
+                    }
+                }
+
+                File.Delete(archivePath);
+                File.Move(tempArchivePath, archivePath);
+
+                _zipItems.Clear();
+                MapArchive(archivePath);
+            });
+
+        AnsiConsole.MarkupLine("[green]Plik/folder został dodany pomyślnie[/]");
     }
 
     private static ZipItem? GetZipItemByIndex(List<ZipItem> zipItems, string? index)
@@ -220,19 +330,33 @@ public class ArchiveExplorerService
 
     private void Display()
     {
-        DisplayRecursive(_zipItems, 0);
+        if (_zipItems.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Archiwum jest puste.[/]");
+            return;
+        }
+
+        AnsiConsole.MarkupLine("[green]Zawartość archiwum:[/]");
+        DisplayRecursive(_zipItems, 0, "");
+        Console.WriteLine("\nNaciśnij dowolny klawisz, aby kontynuować...");
+        Console.ReadKey();
     }
 
-    private static void DisplayRecursive(List<ZipItem> items, int level)
+    private static void DisplayRecursive(List<ZipItem> items, int level, string parentIndex)
     {
-        var index = 0;
-        foreach (var item in items)
+        for (int index = 0; index < items.Count; index++)
         {
-            Console.WriteLine($"{new string(' ', level * 2)}{index}) {item.Name}");
-            index++;
-            if (item.IsDirectory)
+            var item = items[index];
+            string currentIndex = string.IsNullOrEmpty(parentIndex) ? index.ToString() : $"{parentIndex}.{index}";
+            string itemType = item.IsDirectory ? "[blue]📁[/]" : "[yellow]📄[/]";
+            string lockIcon = item.IsPassword ? "🔒" : "";
+
+            AnsiConsole.MarkupLine(
+                $"{new string(' ', level * 2)}[grey]{currentIndex})[/] {itemType} {item.Name} {lockIcon}");
+
+            if (item.IsDirectory && item.Children.Count > 0)
             {
-                DisplayRecursive(item.Children, level + 1);
+                DisplayRecursive(item.Children, level + 1, currentIndex);
             }
         }
     }
