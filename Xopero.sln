@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archiver", "Archiver\Archiver.csproj", "{4A168F6A-960A-4E88-BC68-D7187073F2D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archiver.Tests", "Archiver.Tests\Archiver.Tests.csproj", "{2B6E015A-D59A-4E5F-91C0-0052578ED8D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{4A168F6A-960A-4E88-BC68-D7187073F2D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A168F6A-960A-4E88-BC68-D7187073F2D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A168F6A-960A-4E88-BC68-D7187073F2D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B6E015A-D59A-4E5F-91C0-0052578ED8D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B6E015A-D59A-4E5F-91C0-0052578ED8D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B6E015A-D59A-4E5F-91C0-0052578ED8D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B6E015A-D59A-4E5F-91C0-0052578ED8D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
