@@ -1,0 +1,4 @@
+bin
+obj
+postgres_data
+mariadb_data
