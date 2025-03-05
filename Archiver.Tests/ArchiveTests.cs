@@ -1,5 +1,4 @@
-using System;
-using System.IO;
+using System.Diagnostics;
 
 namespace Archiver.Tests;
 
@@ -10,11 +9,11 @@ public class ArchiveTests : IDisposable
     protected readonly string TestFile;
     protected readonly string TestFolder;
 
-    public ArchiveTests()
+    protected ArchiveTests()
     {
         TestDir = Path.Combine(Path.GetTempPath(), "ArchiverTests_" + Guid.NewGuid());
         Directory.CreateDirectory(TestDir);
-
+        
         TestArchive = Path.Combine(TestDir, "test.zip");
         TestFile = Path.Combine(TestDir, "testfile.txt");
         TestFolder = Path.Combine(TestDir, "testfolder");
@@ -28,5 +27,6 @@ public class ArchiveTests : IDisposable
     public void Dispose()
     { 
         Directory.Delete(TestDir, true);
+        GC.SuppressFinalize(this);
     }
 }
