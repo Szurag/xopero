@@ -1,5 +1,6 @@
 using Archiver.Models;
 using ICSharpCode.SharpZipLib.Zip;
+using Spectre.Console;
 
 namespace Archiver.Services;
 
@@ -10,43 +11,38 @@ public class ArchiveExplorerService
 
     public void ArchiveExplorer()
     {
-        var archivePath = GetPathService.GetPath("Podaj path archiwum, którym chcesz zarządzać");
-
-        if (!File.Exists(archivePath))
-        {
-            Console.WriteLine("Archiwum nie istnieje");
-            return;
-        }
-
-        if (Path.GetExtension(archivePath) != ".zip")
-        {
-            Console.WriteLine("To nie jest archiwum zip");
-            return;
-        }
-
+        var archivePath = GetPathService.GetPath();
         MapArchive(archivePath);
 
-        Display();
+        var exit = false;
 
-        Console.WriteLine("Wybierz akcję");
-        Console.WriteLine("1 - Dodaj plik/folder do archiwum");
-        Console.WriteLine("2 - Usuń plik z archiwum");
-        Console.WriteLine("3 - Wyszukaj po nazwie");
-
-        var action = Console.ReadLine();
-
-        switch (action)
+        do
         {
-            case "1":
-                AddFileToArchive(archivePath);
-                break;
-            case "2":
-                RemoveFileFromArchive(archivePath);
-                break;
-            case "3":
-                SearchByName();
-                break;
-        }
+            var option = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Wybierz akcje:")
+                    .PageSize(10)
+                    .AddChoices("1 - przeglądaj archiwum", "2 - dodaj plik do archiwum", "3 - Usuń plik z archiwum", "4 - Wyszukaj po nazwie", "5 - Wyjdź"));
+
+            switch (option)
+            {
+                case "1":
+                    Display();
+                    break;
+                case "2":
+                    AddFileToArchive(archivePath);
+                    break;
+                case "3":
+                    RemoveFileFromArchive(archivePath);
+                    break;
+                case "4":
+                    SearchByName();
+                    break;
+                case "5":
+                    exit = true;
+                    break;
+            }
+        } while (!exit);
     }
 
     private void SearchByName()
@@ -146,9 +142,9 @@ public class ArchiveExplorerService
             return;
         }
 
-        var path = GetPathService.GetPath("Podaj path pliku / folderu, który chcesz dodać");
-        var compressionLevel = CreateArchiveService.AskForCompressionLevel();
-        var password = CreateArchiveService.AskForPassword();
+        var path = GetPathService.GetPath();
+        var compressionLevel = 1;
+        var password = "2";
 
         var tempArchivePath = Path.GetTempFileName();
 

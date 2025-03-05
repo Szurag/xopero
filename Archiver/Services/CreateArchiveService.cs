@@ -2,44 +2,38 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace Archiver.Services;
 
-public abstract class CreateArchiveService
+public static class CreateArchiveService
 {
-    public static void CreateArchive()
+    public static void CreateArchive(string path, string archivePath, int compressionLevel, string? password)
     {
-        var path = GetPathService.GetPath("Podaj path pliku / folderu, który chcesz spakować");
-        var archivePath = GetPathService.GetPath("Podaj path archiwum");
-
-        var compressionLevel = AskForCompressionLevel();
-
-        var password = AskForPassword();
-
         using var fs = File.Create(archivePath);
-
         using var zipStream = new ZipOutputStream(fs);
-        zipStream.SetLevel(Convert.ToInt32(compressionLevel));
+        SetCompressionLevel(zipStream, compressionLevel);
+        SetPassword(zipStream, password);
 
-        if (password != "")
-        {
-            zipStream.Password = password;
-        }
+        AddFilesToArchive(zipStream, path);
+        zipStream.Close();
+    }
 
+    private static void AddFilesToArchive(ZipOutputStream zipStream, string path)
+    {
         if (Directory.Exists(path))
         {
             AddDirectoryToArchive(zipStream, path, "");
         }
-        else if (File.Exists(path))
+        
+        if (File.Exists(path))
         {
             AddFileToArchive(zipStream, path, "");
         }
-
-        zipStream.CloseEntry();
     }
 
-    public static string? AskForPassword()
+    private static void SetPassword(ZipOutputStream zipStream, string? password)
     {
-        Console.WriteLine("Podaj hasło do archiwum");
-        Console.WriteLine("Jeżeli brak hasła, naciśnij Enter");
-        return Console.ReadLine();
+        if (password != "")
+        {
+            zipStream.Password = password;
+        }
     }
 
     public static void AddFileToArchive(ZipOutputStream zipStream, string filePath, string parentDirectory)
@@ -78,13 +72,13 @@ public abstract class CreateArchiveService
         }
     }
 
-    public static string? AskForCompressionLevel()
+    private static void SetCompressionLevel(ZipOutputStream zipOutputStream, int compressionLevel)
     {
-        Console.WriteLine("Wybierz poziom kompresji:");
-        Console.WriteLine("1 - 9");
+        if (compressionLevel is > 9 or < 0)
+        {
+            compressionLevel = 7;
+        }
 
-        var compressionLevel = Console.ReadLine();
-
-        return compressionLevel;
+        zipOutputStream.SetLevel(compressionLevel);
     }
 }
