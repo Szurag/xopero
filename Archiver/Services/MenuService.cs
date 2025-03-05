@@ -1,6 +1,6 @@
-namespace Szyfrator.Services;
+namespace Archiver.Services;
 
-public class MenuService
+public static class MenuService
 {
     public static void Menu()
     {

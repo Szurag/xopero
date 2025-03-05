@@ -1,4 +1,4 @@
-namespace Szyfrator.Models;
+namespace Archiver.Models;
 
 public class ZipItem
 {

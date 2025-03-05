@@ -7,7 +7,7 @@
         x:Class="Szyfrator.Gui.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Szyfrator.Gui">
+        Title="Archiver.Gui">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -22,7 +22,7 @@
                 VerticalContentAlignment="Center"
                 HorizontalContentAlignment="Center"
                 FontSize="72">
-                Szyfrator
+                Archiver
             </Label>
 
             <StackPanel Grid.Row="1" Grid.Column="0">

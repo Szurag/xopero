@@ -1,7 +1,7 @@
+using Archiver.Models;
 using ICSharpCode.SharpZipLib.Zip;
-using Szyfrator.Models;
 
-namespace Szyfrator.Services;
+namespace Archiver.Services;
 
 public class ArchiveExplorerService
 {

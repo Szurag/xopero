@@ -1,6 +1,6 @@
-﻿using Szyfrator.Services;
+﻿using Archiver.Services;
 
-namespace Szyfrator;
+namespace Archiver;
 
 class Program()
 {

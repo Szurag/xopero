@@ -1,6 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 
-namespace Szyfrator.Services;
+namespace Archiver.Services;
 
 public abstract class CreateArchiveService
 {

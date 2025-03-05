@@ -1,6 +1,6 @@
-namespace Szyfrator.Services;
+namespace Archiver.Services;
 
-public abstract class GetPathService
+public static class GetPathService
 {
     public static string GetPath(string message)
     {
