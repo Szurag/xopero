@@ -1,5 +1,7 @@
 # Praktyki
 
+
+## Pojęcia:
 ### Część pierwsza
 
 #### VSS (Volume Shadow Copy)
